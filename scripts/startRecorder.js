@@ -1,8 +1,11 @@
-let commandList =[];
-let element
-let inputType= false;
-let clicked = () => {
+commandList = typeof(commandList) === 'undefined' ? [] : commandList;
+elementData = typeof(element) === 'undefined' ? '' : element;
+inputType = typeof(inputType) === 'undefined' ? false : inputType;
+
+function clicked () {
 console.log("clicado")
+
+    console.log(sessionStorage.commandList)
     checkInput();
     e = window.event;
     var element = e.target || e.srcElement;
@@ -15,28 +18,28 @@ console.log("clicado")
         data=`cy.get('.${element.id}')`
     }
     inputType = element.nodeName === 'INPUT';
-    this.element= element;
-
+    elementData= element;
     macro(data)
 };
 
-let checkInput =() =>{
+function checkInput (){
     if(commandList.length!==0){
-        if(inputType){
-            if(this.element.type==="text" || this.element.type==="number"){
-            console.log(this.element.value)
-                commandList[commandList.length-1] =commandList[commandList.length-1].concat(`.clear().type('${this.element.value}');`)
+        if(!commandList[commandList.length-1].includes(";")){
+            if(inputType){
+                if(elementData.type==="text" || elementData.type==="number"){
+                    commandList[commandList.length-1] =commandList[commandList.length-1].concat(`.clear().type('${elementData.value}');`)
+                }
+                if(elementData.type==="radio"){
+                    commandList[commandList.length-1] =commandList[commandList.length-1].concat(`.check()`)
+                }
             }
-            if(this.element.type==="radio"){
-                commandList[commandList.length-1] =commandList[commandList.length-1].concat(`.check()`)
-            }
-        }
         else{
-            console.log("ha entrado aqui alguna vez")
             commandList[commandList.length-1] =commandList[commandList.length-1].concat(`.click();`)
+        }
         }
     }
     inputType = false;
+    sessionStorage.setItem("commandList", commandList)
 }
 
 macro = (line) =>{
@@ -52,7 +55,6 @@ macro = (line) =>{
 function getDomPath(el) {
     var stack = [];
     while ( el.parentNode != null ) {
-        //console.log(el.nodeName);
         var sibCount = 0;
         var sibIndex = 0;
         for ( var i = 0; i < el.parentNode.childNodes.length; i++ ) {
@@ -76,4 +78,6 @@ function getDomPath(el) {
 
     return stack.slice(1).join(' > '); // removes the html element
 }
+
+document.removeEventListener('click', clicked)
 document.addEventListener('click', clicked)

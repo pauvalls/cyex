@@ -1,6 +1,7 @@
 document.removeEventListener('click', clicked)
 checkInput();
 
+
 console.log(
 `
 describe('empty spec', () => {
@@ -10,3 +11,4 @@ describe('empty spec', () => {
 })`
 )
 
+sessionStorage.setItem("commandList", "")
