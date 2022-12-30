@@ -6,9 +6,8 @@ console.log(
 `
 describe('empty spec', () => {
   it('passes', () => {
-      ${commandList.toString().replaceAll(",", "\n")}
+      ${commandList.toString().replaceAll(");,", ");\n")}
   })
 })`
 )
 
-sessionStorage.setItem("commandList", "")

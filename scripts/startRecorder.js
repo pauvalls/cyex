@@ -1,11 +1,26 @@
 commandList = typeof(commandList) === 'undefined' ? [] : commandList;
 elementData = typeof(element) === 'undefined' ? '' : element;
 inputType = typeof(inputType) === 'undefined' ? false : inputType;
+var ultimoElementoClicado;
+window.removeEventListener('click', clicked)
+window.addEventListener('click', clicked)
+window.addEventListener("click", function(event) {
+    e = window.event;
+    var element = e.target || e.srcElement;
+    data = `cy.get('${getDomPath(element)}')`
+    ultimoElementoClicado = data;
+});
+window.addEventListener("beforeunload", function(event) {
+    e = window.event;
+    var element = e.target || e.srcElement;
+    data = `cy.get('${getDomPath(element)}')`
+    checkInput();
+    messageCommandList()
+});
+
 
 function clicked () {
-console.log("clicado")
-
-    console.log(sessionStorage.commandList)
+    ultimoElementoClicado = event.target;
     checkInput();
     e = window.event;
     var element = e.target || e.srcElement;
@@ -20,31 +35,49 @@ console.log("clicado")
     inputType = element.nodeName === 'INPUT';
     elementData= element;
     macro(data)
+    messageCommandList()
 };
-
+function messageCommandList(){
+    chrome.runtime.sendMessage({text: commandList}, function(response) {
+    if(typeof(commandList) === 'undefined') {
+         commandList = response.text
+        checkInput();
+    }
+    if(response !== 'undefined'){
+        commandList = response
+    }
+    });
+}
 function checkInput (){
-    if(commandList.length!==0){
-        if(!commandList[commandList.length-1].includes(";")){
+    const listSize = commandList.length;
+    let lastElement = commandList[listSize - 1];
+
+    if(listSize!==0){
+        if(!lastElement.includes(";")){
             if(inputType){
                 if(elementData.type==="text" || elementData.type==="number"){
-                    commandList[commandList.length-1] =commandList[commandList.length-1].concat(`.clear().type('${elementData.value}');`)
+                    if(elementData.value){
+                        lastElement = lastElement.concat(`.clear().type('${elementData.value}');`)
+                    }
+                    else{
+                        lastElement =lastElement.concat(`;`)
+                    }
                 }
                 if(elementData.type==="radio"){
-                    commandList[commandList.length-1] =commandList[commandList.length-1].concat(`.check()`)
+                    lastElement =lastElement.concat(`.check()`)
                 }
             }
         else{
-            commandList[commandList.length-1] =commandList[commandList.length-1].concat(`.click();`)
+            lastElement =lastElement.concat(`.click();`)
         }
         }
     }
     inputType = false;
-    sessionStorage.setItem("commandList", commandList)
 }
 
 macro = (line) =>{
     if(commandList.length === 0){
-        commandList.push(`cy.visit('${window.location.href}')`)
+        commandList.push(`cy.visit('${window.location.href}');`)
         commandList.push(line)
     }
     else{
@@ -78,6 +111,3 @@ function getDomPath(el) {
 
     return stack.slice(1).join(' > '); // removes the html element
 }
-
-document.removeEventListener('click', clicked)
-document.addEventListener('click', clicked)

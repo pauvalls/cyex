@@ -1,11 +1,35 @@
+commandListSave = typeof(commandList) === 'undefined' ? [] : commandListSave;
+offinstalled = typeof(offinstalled) === 'undefined' ? false : offinstalled;
+
+async function executeScript(state, tab) {
+    console.log("entra")
+    if (state === "ON") {
+        // Insert the CSS file when the user turns the extension on
+        await chrome.scripting.executeScript({
+            files : ['scripts/startRecorder.js'],
+            target: { tabId: tab.id },
+        });
+    } else if (state === "OFF") {
+        // Remove the CSS file when the user turns the extension off
+        if(!offinstalled){
+            commandListSave = []
+            await chrome.scripting.executeScript({
+                files : ['scripts/stopRecorder.js'],
+                target: { tabId: tab.id },
+            });
+        }
+    }
+}
 chrome.runtime.onInstalled.addListener(() => {
     chrome.action.setBadgeText({
         text: "OFF",
     });
     chrome.storage.sync.set({state:"OFF"})
+    offinstalled =true
 
 });
 chrome.action.onClicked.addListener(async (tab) => {
+    offinstalled=false
     // Retrieve the action badge to check if the extension is 'ON' or 'OFF'
     const prevState = await chrome.action.getBadgeText({ tabId: tab.id });
     // Next state will always be the opposite
@@ -16,49 +40,32 @@ chrome.action.onClicked.addListener(async (tab) => {
         tabId: tab.id,
         text: nextState,
     });
-    if (nextState === "ON") {
-        // Insert the CSS file when the user turns the extension on
-        await chrome.scripting.executeScript({
-            files : ['scripts/startRecorder.js'],
-                target: { tabId: tab.id },
-            });
-   } else if (nextState === "OFF") {
-        // Remove the CSS file when the user turns the extension off
+    await executeScript(nextState, tab)
 
-        await chrome.scripting.executeScript({
-            files : ['scripts/stopRecorder.js'],
-            target: { tabId: tab.id },
-        });
-    }
 });
-
 chrome.tabs.onUpdated.addListener(async function(tabId, changeInfo, tab) {
-    chrome.storage.sync.get('state',({state}) =>{
-        console.log("cosa buena.js")
-        console.log(tabId)
-        console.log(changeInfo)
-        console.log(tab)
+    await chrome.storage.sync.get('state', async ({state}) =>{
         chrome.action.setBadgeText({
             text: state
         });
-        console.log(sessionStorage.commandList)
-        chrome.storage.sync.get(commandList,(commandList) =>{
-            console.log(commandList)
-        })
-
-        if (state === "ON") {
-            // Insert the CSS file when the user turns the extension on
-             chrome.scripting.executeScript({
-                 files : ['scripts/startRecorder.js'],
-                target: { tabId: tab.id },
-            });
-        } else if (state === "OFF") {
-            // Remove the CSS file when the user turns the extension off
-
-             chrome.scripting.executeScript({
-                files : ['scripts/stopRecorder.js'],
-                target: { tabId: tab.id },
-            });
+        if(changeInfo.status ==="complete"){
+            console.log(state)
+            await  executeScript(state, tab)
         }
     });
+
+
+});
+
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+    if(msg.text.length >= commandListSave.length){
+        this.commandListSave = msg.text
+        sendResponse(this.commandListSave);
+
+    }else{
+        this.commandListSave.push(msg.text[0].replaceAll("cy.visit(","cy.url().should('eq', "))
+        this.commandListSave.push(msg.text[1])
+        sendResponse(this.commandListSave);
+
+    }
 });
