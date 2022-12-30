@@ -3,6 +3,9 @@
     "name": "Cypress recorder",
     "version": "1.0",
     "description": "create en the console the record of all movements when enable the recorder",
+    "action": {
+
+    },
     "background": {
         "service_worker": "background.js"
     },
