@@ -1,6 +1,6 @@
-document.removeEventListener('click', clicked)
-checkInput();
-
+window.removeEventListener('click', clicked)
+window.removeEventListener('beforeunload', beforeunload)
+checkInput()
 
 console.log(
 `

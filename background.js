@@ -63,7 +63,6 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
         sendResponse(this.commandListSave);
 
     }else{
-        this.commandListSave.push(msg.text[0].replaceAll("cy.visit(","cy.url().should('eq', "))
         this.commandListSave.push(msg.text[1])
         sendResponse(this.commandListSave);
 

@@ -1,26 +1,21 @@
 commandList = typeof(commandList) === 'undefined' ? [] : commandList;
 elementData = typeof(element) === 'undefined' ? '' : element;
 inputType = typeof(inputType) === 'undefined' ? false : inputType;
-var ultimoElementoClicado;
-window.removeEventListener('click', clicked)
+
 window.addEventListener('click', clicked)
-window.addEventListener("click", function(event) {
+
+window.addEventListener("beforeunload", beforeunload)
+function beforeunload(){
     e = window.event;
     var element = e.target || e.srcElement;
     data = `cy.get('${getDomPath(element)}')`
-    ultimoElementoClicado = data;
-});
-window.addEventListener("beforeunload", function(event) {
-    e = window.event;
-    var element = e.target || e.srcElement;
-    data = `cy.get('${getDomPath(element)}')`
+    inputType = element.nodeName === 'INPUT';
+    elementData= element;
     checkInput();
+    commandList.push(`cy.url().should('eq', '${window.location.href}');`)
     messageCommandList()
-});
-
-
+}
 function clicked () {
-    ultimoElementoClicado = event.target;
     checkInput();
     e = window.event;
     var element = e.target || e.srcElement;
@@ -30,7 +25,7 @@ function clicked () {
         data=`cy.get('#${element.id}')`
     }
     if(element.class){
-        data=`cy.get('.${element.id}')`
+        data=`cy.get('.${element.class}')`
     }
     inputType = element.nodeName === 'INPUT';
     elementData= element;
@@ -39,37 +34,29 @@ function clicked () {
 };
 function messageCommandList(){
     chrome.runtime.sendMessage({text: commandList}, function(response) {
-    if(typeof(commandList) === 'undefined') {
-         commandList = response.text
-        checkInput();
-    }
-    if(response !== 'undefined'){
+        console.log(response)
         commandList = response
-    }
-    });
+
+    })
 }
 function checkInput (){
-    const listSize = commandList.length;
-    let lastElement = commandList[listSize - 1];
-
-    if(listSize!==0){
-        if(!lastElement.includes(";")){
+    if(commandList.length!==0){
+        if(!commandList[commandList.length-1].includes(";")){
             if(inputType){
                 if(elementData.type==="text" || elementData.type==="number"){
                     if(elementData.value){
-                        lastElement = lastElement.concat(`.clear().type('${elementData.value}');`)
+                    commandList[commandList.length-1] =commandList[commandList.length-1].concat(`.clear().type('${elementData.value}');`)
                     }
                     else{
-                        lastElement =lastElement.concat(`;`)
+                        commandList[commandList.length-1] =commandList[commandList.length-1].concat(`;`)
                     }
                 }
                 if(elementData.type==="radio"){
-                    lastElement =lastElement.concat(`.check()`)
+                    commandList[commandList.length-1] =commandList[commandList.length-1].concat(`.check()`)
                 }
+            }else{
+                    commandList[commandList.length-1] =commandList[commandList.length-1].concat(`.click();`)
             }
-        else{
-            lastElement =lastElement.concat(`.click();`)
-        }
         }
     }
     inputType = false;
